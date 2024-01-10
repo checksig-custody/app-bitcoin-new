@@ -38,6 +38,10 @@ typedef struct {
 } ui_path_and_hash_state_t;
 
 typedef struct {
+    char content[64 + 1];
+} ui_message_content_state_t;
+
+typedef struct {
     char wallet_name[MAX_WALLET_NAME_LENGTH + 1];
 
     // no flows show together both a policy map and an address, therefore we share memory
@@ -69,6 +73,7 @@ typedef union {
     ui_path_and_pubkey_state_t path_and_pubkey;
     ui_path_and_address_state_t path_and_address;
     ui_path_and_hash_state_t path_and_hash;
+    ui_message_content_state_t message_content;
     ui_wallet_state_t wallet;
     ui_cosigner_pubkey_and_index_state_t cosigner_pubkey_and_index;
     ui_validate_output_state_t validate_output;
@@ -93,7 +98,6 @@ bool ui_display_pubkey(dispatcher_context_t *context,
 
 // TODO: docs
 bool ui_display_message_hash(dispatcher_context_t *context,
-                             const char *bip32_path_str,
                              const char *message_hash);
 
 bool ui_display_address(dispatcher_context_t *dispatcher_context,

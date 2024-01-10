@@ -30,9 +30,39 @@
 
 #include "handlers.h"
 
+#define MAX_DISPLAYBLE_CHUNK_NUMBER 10
+
 static unsigned char const BSM_SIGN_MAGIC[] = {'\x18', 'B', 'i', 't', 'c', 'o', 'i', 'n', ' ',
                                                'S',    'i', 'g', 'n', 'e', 'd', ' ', 'M', 'e',
                                                's',    's', 'a', 'g', 'e', ':', '\n'};
+
+static bool message_is_printable(dispatcher_context_t *dc, size_t n_chunks, uint8_t* message_merkle_root) {
+    if (n_chunks > MAX_DISPLAYBLE_CHUNK_NUMBER) {
+        return false;
+    }
+
+    for (unsigned int i = 0; i < n_chunks; i++) {
+        uint8_t message_chunk[64];
+        int chunk_len = call_get_merkle_leaf_element(dc,
+                                                     message_merkle_root,
+                                                     n_chunks,
+                                                     i,
+                                                     message_chunk,
+                                                     sizeof(message_chunk));
+
+        if (chunk_len < 0 || (chunk_len != 64 && i != n_chunks - 1)) {
+            SEND_SW(dc, SW_BAD_STATE);  // should never happen
+            return false;
+        }
+
+        for (unsigned int j = 0; j < chunk_len; j++) {
+            if (message_chunk[j] < 0x20 || message_chunk[j] > 0x7E) {
+                return false;
+            } 
+        }
+    }
+    return true;
+}
 
 void handler_sign_message(dispatcher_context_t *dc, uint8_t protocol_version) {
     (void) protocol_version;
@@ -68,9 +98,15 @@ void handler_sign_message(dispatcher_context_t *dc, uint8_t protocol_version) {
     crypto_hash_update(&bsm_digest_context.header, BSM_SIGN_MAGIC, sizeof(BSM_SIGN_MAGIC));
     crypto_hash_update_varint(&bsm_digest_context.header, message_length);
 
+    ui_sign_message(dc, path_str);
+
     size_t n_chunks = (message_length + 63) / 64;
+
+    bool printable = message_is_printable(dc, n_chunks, message_merkle_root);
+
     for (unsigned int i = 0; i < n_chunks; i++) {
         uint8_t message_chunk[64];
+        explicit_bzero(message_chunk, sizeof(message_chunk));
         int chunk_len = call_get_merkle_leaf_element(dc,
                                                      message_merkle_root,
                                                      n_chunks,
@@ -85,6 +121,10 @@ void handler_sign_message(dispatcher_context_t *dc, uint8_t protocol_version) {
 
         crypto_hash_update(&msg_hash_context.header, message_chunk, chunk_len);
         crypto_hash_update(&bsm_digest_context.header, message_chunk, chunk_len);
+
+        if (printable) {
+            ui_display_message_content(dc, message_chunk);
+        }
     }
 
     uint8_t message_hash[32];
@@ -99,12 +139,20 @@ void handler_sign_message(dispatcher_context_t *dc, uint8_t protocol_version) {
         snprintf(message_hash_str + 2 * i, 3, "%02X", message_hash[i]);
     }
 
-    if (!ui_display_message_hash(dc, path_str, message_hash_str)) {
-        SEND_SW(dc, SW_DENY);
-        ui_post_processing_confirm_message(dc, false);
-        return;
+    if (printable) {
+        if (!ui_display_message_confirm(dc)) {
+            SEND_SW(dc, SW_DENY);
+            ui_post_processing_confirm_message(dc, false);
+            return;
+        }
     }
-
+    else {
+        if (!ui_display_message_hash_and_confirm(dc, message_hash_str)) {
+            SEND_SW(dc, SW_DENY);
+            ui_post_processing_confirm_message(dc, false);
+            return;
+        }
+    }
     uint8_t sig[MAX_DER_SIG_LEN];
 
     uint32_t info;

@@ -6,7 +6,6 @@ from bitcoin_client.ledger_bitcoin.exception.errors import DenyError
 from test_utils import has_automation
 
 
-@has_automation("automations/sign_message_accept.json")
 def test_sign_message(client: Client):
     msg = "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks."
     path = "m/44'/1'/0'/0/0"

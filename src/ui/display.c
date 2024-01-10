@@ -75,15 +75,41 @@ bool ui_display_pubkey(dispatcher_context_t *context,
     return io_ui_process(context, true);
 }
 
-bool ui_display_message_hash(dispatcher_context_t *context,
-                             const char *bip32_path_str,
-                             const char *message_hash) {
+bool ui_sign_message(dispatcher_context_t *context, 
+                     const char* bip32_path_str) {
     ui_path_and_hash_state_t *state = (ui_path_and_hash_state_t *) &g_ui_state;
 
     strncpy(state->bip32_path_str, bip32_path_str, sizeof(state->bip32_path_str));
-    strncpy(state->hash_hex, message_hash, sizeof(state->hash_hex));
 
-    ui_sign_message_flow();
+    ui_sign_message_path_flow();
+
+    return io_ui_process(context, true);
+}
+
+bool ui_display_message_content(dispatcher_context_t *context,
+                             const char *message_content) {
+    ui_message_content_state_t *state = (ui_message_content_state_t *) &g_ui_state;
+
+    strncpy(state->content, message_content, sizeof(state->content));
+
+    ui_sign_message_content_flow();
+
+    return io_ui_process(context, true);
+}
+
+bool ui_display_message_hash_and_confirm(dispatcher_context_t *context,
+                             const char *message_hash) {
+
+    ui_path_and_hash_state_t *state = (ui_path_and_hash_state_t *) &g_ui_state;
+
+    strncpy(state->hash_hex, message_hash, sizeof(state->hash_hex));
+    ui_sign_message_hash_and_confirm_flow();
+
+    return io_ui_process(context, true);
+}
+
+bool ui_display_message_confirm(dispatcher_context_t *context) {
+    ui_sign_message_confirm_flow();
 
     return io_ui_process(context, true);
 }

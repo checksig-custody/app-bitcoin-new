@@ -242,8 +242,9 @@ UX_STEP_NOCB(ux_sign_message_step,
                  "message",
              });
 
-UX_STEP_NOCB(ux_message_sign_display_path_step,
-             bnnn_paging,
+UX_STEP_CB(ux_message_sign_display_path_step,
+             sarah,
+             set_ux_flow_response(true),
              {
                  .title = "Path",
                  .text = g_ui_state.path_and_hash.bip32_path_str,
@@ -261,18 +262,41 @@ UX_STEP_CB(ux_sign_message_accept_new,
            set_ux_flow_response(true),
            {&C_icon_validate_14, "Sign", "message"});
 
+UX_STEP_CB(ux_message_content_step,
+             sarah,
+             set_ux_flow_response(true),
+             {
+                 .title = "Message content",
+                 .text = g_ui_state.message_content.content,
+             });
+
 // FLOW to display BIP32 path and a message hash to sign:
 // #1 screen: certificate icon + "Sign message"
 // #2 screen: display BIP32 Path
 // #3 screen: display message hash
 // #4 screen: "Sign message" and approve button
 // #5 screen: reject button
-UX_FLOW(ux_sign_message_flow,
+UX_FLOW(ux_sign_message_path_flow,
         &ux_sign_message_step,
-        &ux_message_sign_display_path_step,
+        &ux_message_sign_display_path_step);
+
+UX_FLOW(ux_sign_message_hash_and_confirm_flow,
         &ux_message_hash_step,
         &ux_sign_message_accept_new,
         &ux_display_reject_step);
+
+UX_FLOW(ux_sign_message_confirm_flow,
+        &ux_sign_message_accept_new,
+        &ux_display_reject_step);
+
+// FLOW to display BIP32 path and a message hash to sign:
+// #1 screen: certificate icon + "Sign message"
+// #2 screen: display BIP32 Path
+// #3 screen: display message hash
+// #4 screen: "Sign message" and approve button
+// #5 screen: reject button
+UX_FLOW(ux_sign_message_content_flow,
+        &ux_message_content_step);
 
 // FLOW to display BIP32 path and pubkey:
 // #1 screen: eye icon + "Confirm Pubkey"
@@ -445,8 +469,20 @@ void ui_display_pubkey_suspicious_flow(void) {
     ux_flow_init(0, ux_display_pubkey_suspicious_flow, NULL);
 }
 
-void ui_sign_message_flow(void) {
-    ux_flow_init(0, ux_sign_message_flow, NULL);
+void ui_sign_message_path_flow(void) {
+    ux_flow_init(0, ux_sign_message_path_flow, NULL);
+}
+
+void ui_sign_message_hash_and_confirm_flow(void) {
+    ux_flow_init(0, ux_sign_message_hash_and_confirm_flow, NULL);
+}
+
+void ui_sign_message_content_flow(void) {
+    ux_flow_init(0, ux_sign_message_content_flow, NULL);
+}
+
+void ui_sign_message_confirm_flow(void) {
+    ux_flow_init(0, ux_sign_message_confirm_flow, NULL);
 }
 
 void ui_display_register_wallet_flow(void) {
