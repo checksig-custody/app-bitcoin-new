@@ -931,10 +931,10 @@ preprocess_inputs(dispatcher_context_t *dc,
             PRINTF("Error checking if input %d is internal\n", cur_input_index);
             SEND_SW(dc, SW_INCORRECT_DATA);
             return false;
-        } else if (is_internal == 0) {
+        } /*else if (is_internal == 0) {
             PRINTF("INPUT %d is external\n", cur_input_index);
             continue;
-        }
+        }*/
 
         bitvector_set(internal_inputs, cur_input_index, 1);
 
@@ -1026,9 +1026,9 @@ show_alerts(dispatcher_context_t *dc,
     if (count_external_inputs > 0) {
         if (count_external_inputs == st->n_inputs) {
             // no internal inputs, nothing to sign
-            PRINTF("No internal inputs. Aborting\n");
-            SEND_SW(dc, SW_INCORRECT_DATA);
-            return false;
+            // PRINTF("No internal inputs. Aborting\n");
+            // SEND_SW(dc, SW_INCORRECT_DATA);
+            // return false;
         } else {
             // Swap feature: no external inputs allowed
             if (G_swap_state.called_from_swap) {
